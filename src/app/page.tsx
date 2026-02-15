@@ -127,7 +127,7 @@ export default function App() {
                         </div>
                         <h4 className="text-3xl font-bold mb-4 tracking-tight">{selectedTech.name}</h4>
                         <p className="text-lg leading-snug font-medium mb-8 text-black/70 italic">
-                          "{selectedTech.description}"
+                          &quot;{selectedTech.description}&quot;
                         </p>
                         <a
                           href={selectedTech.url}
