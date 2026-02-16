@@ -3,29 +3,22 @@
 import React, { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
-  Folder, 
-  FileCode, 
-  Search, 
-  GitGraph, 
-  Settings, 
-  X, 
-  ChevronRight,
-  ChevronDown,
-  Bot,
-  MessageSquare,
-  ExternalLink,
-  Cpu
+  Folder, FileCode, Search, GitGraph, Settings, X, ChevronRight, ChevronDown, 
+  Bot, ExternalLink, Cpu, PlayCircle, Layers
 } from "lucide-react";
 import { generateExplorerTree, ExplorerNode } from "@/utils/explorer-adapter";
+import { BrowserWindow } from "@/components/BrowserWindow";
 
 export function HomeTemplate() {
-  // Estado inicial gerado pelo Adapter
   const [explorerData, setExplorerData] = useState<ExplorerNode[]>(generateExplorerTree());
   const [activeFileId, setActiveFileId] = useState<string>("file-readme");
   const [openTabs, setOpenTabs] = useState<string[]>(["file-readme"]);
-  const [isCopilotOpen, setIsCopilotOpen] = useState(true);
+  const [isCopilotOpen, setIsCopilotOpen] = useState(false); // Fechado por padrão no mobile
 
-  // Helper recursivo para achar um nó pelo ID
+  // ... (Lógica de Helper findNode, toggleFolder, handleFileClick, closeTab IGUAIS à versão anterior) ...
+  // Para brevidade, assuma que as funções auxiliares são as mesmas. 
+  // Vou replicar o core render logic abaixo.
+
   const findNode = (nodes: ExplorerNode[], id: string): ExplorerNode | null => {
     for (const node of nodes) {
       if (node.id === id) return node;
@@ -39,7 +32,6 @@ export function HomeTemplate() {
 
   const activeNode = useMemo(() => findNode(explorerData, activeFileId), [explorerData, activeFileId]);
 
-  // Toggle Folder Open/Close
   const toggleFolder = (folderId: string) => {
     const updateNodes = (nodes: ExplorerNode[]): ExplorerNode[] => {
       return nodes.map(node => {
@@ -51,7 +43,6 @@ export function HomeTemplate() {
     setExplorerData(updateNodes(explorerData));
   };
 
-  // Handle File Click
   const handleFileClick = (fileId: string) => {
     if (!openTabs.includes(fileId)) {
       setOpenTabs([...openTabs, fileId]);
@@ -70,10 +61,11 @@ export function HomeTemplate() {
     }
   };
 
-  // Componente Recursivo para Renderizar a Árvore
+  // Componente Recursivo (FileTreeItem) - Mantido igual, apenas atualizando ícones visualmente
   const FileTreeItem = ({ node, level }: { node: ExplorerNode; level: number }) => {
     const isFolder = node.type === "folder";
     const isActive = activeFileId === node.id;
+    const isProject = node.id.startsWith("proj-");
     
     return (
       <div>
@@ -90,15 +82,15 @@ export function HomeTemplate() {
               {node.isOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
             </span>
           )}
-          {!isFolder && <span className="w-4" />} {/* Spacer for indentation */}
+          {!isFolder && <span className="w-4" />}
           
           {isFolder ? (
-            <Folder size={14} className={node.id === "folder-src" ? "text-green-500" : "text-blue-400"} />
+            <Folder size={14} className={node.id === "folder-projects" ? "text-purple-500" : "text-blue-400"} />
           ) : (
-            <FileCode size={14} className={isActive ? "text-cyan-300" : "text-white/40"} />
+            <FileCode size={14} className={isProject ? "text-yellow-400" : (isActive ? "text-cyan-300" : "text-white/40")} />
           )}
           
-          <span className="text-sm truncate">{node.name}</span>
+          <span className={`text-sm truncate ${isProject ? "font-medium" : ""}`}>{node.name}</span>
         </div>
         
         {isFolder && node.isOpen && node.children && (
@@ -112,8 +104,139 @@ export function HomeTemplate() {
     );
   };
 
+  // --- RENDER CONTENT SWITCHER ---
+  const renderContent = () => {
+    if (!activeNode?.data) {
+      return (
+        <div className="flex flex-col items-center justify-center h-[50vh] text-white/20">
+          <FileCode size={48} className="mb-4 opacity-50" />
+          <p>Select a file to view.</p>
+        </div>
+      );
+    }
+
+    const { kind, name, description, techStack, repoUrl, fileName, type } = activeNode.data;
+
+    // 1. PROJECT VIEW (Browser Mode)
+    if (kind === "project") {
+      const isFrontend = type === "frontend" || type === "fullstack";
+      
+      return (
+        <div className="h-full flex flex-col gap-6">
+          <div className="flex items-center justify-between">
+            <div>
+               <h1 className="text-2xl font-bold text-white flex items-center gap-3">
+                 {name}
+                 <span className="text-[10px] uppercase tracking-wider px-2 py-0.5 rounded bg-white/10 text-white/50 border border-white/5">
+                   {activeNode.data.status}
+                 </span>
+               </h1>
+               <p className="text-white/60 text-sm mt-1">{description}</p>
+            </div>
+            <div className="flex gap-2">
+              {repoUrl && (
+                <a href={repoUrl} target="_blank" className="p-2 bg-white/5 hover:bg-white/10 rounded-md text-white/60 hover:text-white transition-colors">
+                  <GitGraph size={18} />
+                </a>
+              )}
+            </div>
+          </div>
+
+          {/* O Browser Window só aparece se for Frontend, se for Backend/AI mostra Código/Terminal */}
+          {isFrontend ? (
+            <div className="flex-1 min-h-[400px]">
+              <BrowserWindow url={`projects/${fileName.toLowerCase()}`}>
+                 <div className="p-8 flex flex-col items-center justify-center h-full text-center bg-neutral-50">
+                    <h3 className="text-2xl font-bold text-neutral-800 mb-2">{name} Preview</h3>
+                    <p className="text-neutral-500 max-w-md mb-6">Esta aplicação está rodando em modo de simulação dentro do portfólio.</p>
+                    <button className="px-6 py-2 bg-black text-white rounded-lg text-sm font-medium hover:bg-neutral-800 transition-colors shadow-lg">
+                      Enter Application
+                    </button>
+                 </div>
+              </BrowserWindow>
+            </div>
+          ) : (
+             <div className="flex-1 min-h-[400px] rounded-lg border border-white/10 bg-[#050505] p-6 font-mono text-sm overflow-auto">
+                <div className="flex gap-4 mb-4 border-b border-white/5 pb-2">
+                   <span className="text-green-400 text-xs border-b border-green-400">TERMINAL</span>
+                   <span className="text-white/30 text-xs">OUTPUT</span>
+                </div>
+                <div className="space-y-2">
+                   <p className="text-white/50">$ python {fileName}</p>
+                   <p className="text-blue-400">{`> Initializing ${name} v1.0.0...`}</p>
+                   <p className="text-white/80">{`> Loading models: ${techStack.join(", ")}... OK`}</p>
+                   {activeNode.data.id === 'nexa' && (
+                     <p className="text-purple-400 mt-4">
+                       "Olá. Eu sou Nexa. Minha arquitetura é baseada em narrativas afrofuturistas. Como posso auxiliar na sua jornada de código hoje?"
+                     </p>
+                   )}
+                   <span className="animate-pulse inline-block w-2 h-4 bg-white/50 align-middle"></span>
+                </div>
+             </div>
+          )}
+        </div>
+      );
+    }
+
+    // 2. README VIEW
+    if (activeNode.data.isReadme) {
+      return (
+         <div className="prose prose-invert prose-p:text-sm prose-headings:font-normal prose-code:text-xs max-w-none">
+           <h1 className="text-4xl font-light tracking-tight text-white mb-6">Pablo Rosa Gomes <span className="text-blue-500">v3.0</span></h1>
+           <div className="flex gap-4 mb-8">
+              <span className="px-2 py-1 bg-blue-500/10 text-blue-400 text-xs rounded border border-blue-500/20">Full Stack Developer</span>
+              <span className="px-2 py-1 bg-purple-500/10 text-purple-400 text-xs rounded border border-purple-500/20">AI Enthusiast</span>
+           </div>
+           <p className="text-white/60 text-lg leading-relaxed mb-8">
+             Bem-vindo ao <strong>Stack Intelligence</strong>. Este ambiente simula meu fluxo de trabalho real.
+           </p>
+           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="p-4 rounded border border-white/10 bg-white/5 hover:bg-white/10 transition-colors cursor-pointer group"
+                   onClick={() => toggleFolder('folder-projects')}>
+                 <h3 className="text-white font-bold mb-1 flex items-center gap-2">
+                   <Folder size={16} className="text-purple-500" /> Meus Projetos
+                 </h3>
+                 <p className="text-white/40 text-xs">Explore aplicações reais rodando no navegador virtual.</p>
+              </div>
+              <div className="p-4 rounded border border-white/10 bg-white/5 hover:bg-white/10 transition-colors cursor-pointer group"
+                   onClick={() => toggleFolder('folder-src')}>
+                 <h3 className="text-white font-bold mb-1 flex items-center gap-2">
+                   <Layers size={16} className="text-blue-500" /> Minha Stack
+                 </h3>
+                 <p className="text-white/40 text-xs">Analise a arquitetura técnica e as ferramentas que domino.</p>
+              </div>
+           </div>
+         </div>
+      );
+    }
+
+    // 3. TECH STACK VIEW (Fallback)
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between pb-4 border-b border-white/5">
+          <div className="flex items-center gap-4">
+            <div className="p-3 bg-white/5 rounded-xl border border-white/10">
+              <Cpu size={24} className="text-white" />
+            </div>
+            <div>
+              <h2 className="text-xl font-bold text-white">{name}</h2>
+              <p className="text-xs font-mono text-white/40">{activeNode.data.category} module</p>
+            </div>
+          </div>
+          <a href={activeNode.data.url} target="_blank" className="flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 text-white text-xs font-bold rounded-lg transition-colors">
+            Docs <ExternalLink size={12} />
+          </a>
+        </div>
+        <div className="rounded-lg border border-white/10 bg-[#050505] p-4 font-mono text-sm">
+           <p className="text-white/40 mb-2">// {description}</p>
+           <p><span className="text-purple-400">import</span> <span className="text-white">{`{ ${activeNode.data.name} }`}</span> <span className="text-purple-400">from</span> <span className="text-green-400">"@/stack"</span>;</p>
+        </div>
+      </div>
+    );
+  };
+
   return (
-    <div className="flex h-screen w-full bg-[#050505] text-[#a0a0a0] font-sans overflow-hidden selection:bg-blue-500/30">
+    <div className="flex h-screen w-full bg-[#050505] text-[#a0a0a0] font-sans overflow-hidden selection:bg-purple-500/30">
       
       {/* 1. SIDEBAR ICONES */}
       <aside className="w-12 flex-none border-r border-white/5 bg-[#000000] flex flex-col items-center py-4 gap-6 z-20">
@@ -138,7 +261,7 @@ export function HomeTemplate() {
       {/* 3. MAIN EDITOR */}
       <main className="flex-1 flex flex-col min-w-0 bg-[#0a0a0a]">
         
-        {/* TABS HEADER */}
+        {/* TABS */}
         <div className="h-10 flex border-b border-white/5 bg-[#000000] overflow-x-auto no-scrollbar">
           {openTabs.map(tabId => {
             const node = findNode(explorerData, tabId);
@@ -148,18 +271,15 @@ export function HomeTemplate() {
                 key={tabId}
                 onClick={() => setActiveFileId(tabId)}
                 className={`
-                  group flex items-center gap-2 px-4 min-w-[120px] max-w-[200px] border-r border-white/5 text-xs cursor-pointer select-none
-                  ${activeFileId === tabId ? "bg-[#0a0a0a] text-white border-t-2 border-t-blue-500" : "bg-[#000000] text-white/40 hover:bg-[#0a0a0a] border-t-2 border-t-transparent"}
+                  group flex items-center gap-2 px-4 min-w-[120px] border-r border-white/5 text-xs cursor-pointer select-none
+                  ${activeFileId === tabId ? "bg-[#0a0a0a] text-white border-t-2 border-t-purple-500" : "bg-[#000000] text-white/40 hover:bg-[#0a0a0a] border-t-2 border-t-transparent"}
                 `}
               >
-                <FileCode size={12} className={activeFileId === tabId ? "text-cyan-400" : ""} />
-                <span className="truncate">{node.name}</span>
-                <span 
-                  onClick={(e) => closeTab(e, tabId)}
-                  className={`ml-auto opacity-0 group-hover:opacity-100 p-0.5 hover:bg-white/20 rounded ${activeFileId === tabId ? "opacity-100" : ""}`}
-                >
-                  <X size={10} />
+                <span className={activeFileId === tabId ? "text-purple-400" : ""}>
+                   {node.name.endsWith('tsx') ? <FileCode size={12} /> : <Layers size={12} />}
                 </span>
+                <span className="truncate">{node.name}</span>
+                <span onClick={(e) => closeTab(e, tabId)} className="ml-auto opacity-0 group-hover:opacity-100 hover:text-white"><X size={10} /></span>
               </div>
             );
           })}
@@ -167,119 +287,44 @@ export function HomeTemplate() {
 
         {/* BREADCRUMBS */}
         <div className="h-8 flex items-center px-4 border-b border-white/5 bg-[#0a0a0a] text-xs text-white/30 gap-2">
-          <span>stack-intelligence</span>
-          <span>/</span>
-          {activeNode?.data?.originalCategory && <span>src / {activeNode.data.originalCategory.toLowerCase()} / </span>}
-          <span className="text-white/60">{activeNode?.name}</span>
+           <span>stack-intelligence</span><span>/</span><span className="text-white/60">{activeNode?.name}</span>
         </div>
 
-        {/* CONTENT AREA */}
+        {/* VIEWPORT CONTENT */}
         <div className="flex-1 overflow-y-auto p-8 relative">
           <AnimatePresence mode="wait">
             <motion.div
               key={activeFileId}
-              initial={{ opacity: 0, y: 5 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.15 }}
-              className="max-w-4xl mx-auto"
+              initial={{ opacity: 0, scale: 0.98 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.2 }}
+              className="h-full max-w-5xl mx-auto"
             >
-              {activeNode?.data?.isReadme ? (
-                 // README VIEW
-                 <div className="prose prose-invert prose-p:text-sm prose-headings:font-normal prose-code:text-xs">
-                   <h1 className="text-4xl font-light tracking-tight text-white mb-6">Pablo Rosa Gomes <span className="text-blue-500">v3.0</span></h1>
-                   <div className="flex gap-4 mb-8">
-                      <span className="px-2 py-1 bg-blue-500/10 text-blue-400 text-xs rounded border border-blue-500/20">Full Stack Developer</span>
-                      <span className="px-2 py-1 bg-green-500/10 text-green-400 text-xs rounded border border-green-500/20">Available for Hire</span>
-                   </div>
-                   <p className="text-white/60 text-lg leading-relaxed">
-                     Engenheiro de Software focado em construir sistemas escaláveis e interfaces imersivas. 
-                     Este portfólio é uma <strong className="text-white">IDE interativa</strong>. Explore a árvore de arquivos à esquerda para ver meus conhecimentos em código.
-                   </p>
-                 </div>
-              ) : activeNode?.data?.category ? (
-                // TECH SPEC VIEW (Code-like Visualization)
-                <div className="space-y-6">
-                  <div className="flex items-center justify-between pb-4 border-b border-white/5">
-                    <div className="flex items-center gap-4">
-                      <div className="p-3 bg-white/5 rounded-xl border border-white/10">
-                        <Cpu size={24} className="text-white" />
-                      </div>
-                      <div>
-                        <h2 className="text-xl font-bold text-white">{activeNode.data.name}</h2>
-                        <p className="text-xs font-mono text-white/40">{activeNode.data.category} module</p>
-                      </div>
-                    </div>
-                    <a 
-                      href={activeNode.data.url} 
-                      target="_blank" 
-                      className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-lg transition-colors"
-                    >
-                      Documentation <ExternalLink size={12} />
-                    </a>
-                  </div>
-
-                  {/* Code Block Simulation */}
-                  <div className="rounded-lg border border-white/10 bg-[#050505] p-4 font-mono text-sm overflow-x-auto">
-                    <div className="flex gap-4 mb-4 border-b border-white/5 pb-2">
-                       <span className="text-white/30 text-xs">PROBLEMS</span>
-                       <span className="text-white/30 text-xs">OUTPUT</span>
-                       <span className="text-blue-400 text-xs border-b border-blue-400">DEBUG CONSOLE</span>
-                    </div>
-                    <div className="space-y-1">
-                      <p><span className="text-purple-400">const</span> <span className="text-yellow-200">techConfig</span> = <span className="text-blue-400">{`{`}</span></p>
-                      <p className="pl-4"><span className="text-sky-300">id</span>: <span className="text-green-400">"{activeNode.data.id}"</span>,</p>
-                      <p className="pl-4"><span className="text-sky-300">name</span>: <span className="text-green-400">"{activeNode.data.name}"</span>,</p>
-                      <p className="pl-4"><span className="text-sky-300">description</span>: <span className="text-orange-300">"{activeNode.data.description}"</span>,</p>
-                      <p className="pl-4"><span className="text-sky-300">proficiency</span>: <span className="text-blue-400">"Principal"</span>,</p>
-                      <p><span className="text-blue-400">{`}`}</span>;</p>
-                      <br />
-                      <p className="text-white/40">// {activeNode.data.leadText}</p>
-                      <p className="text-white/40">// Initializing module...</p>
-                      <p className="text-green-400/80">{`> Module loaded successfully in 45ms.`}</p>
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                // EMPTY / GENERIC STATE
-                <div className="flex flex-col items-center justify-center h-[50vh] text-white/20">
-                  <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center mb-4">
-                    <FileCode size={32} />
-                  </div>
-                  <p>Selecione um arquivo para visualizar seus detalhes.</p>
-                </div>
-              )}
+              {renderContent()}
             </motion.div>
           </AnimatePresence>
         </div>
       </main>
 
-      {/* 4. COPILOT (Placeholder - Mantido igual para não quebrar o layout) */}
+      {/* 4. COPILOT (Collapsed for now) */}
       {isCopilotOpen && (
-        <aside className="w-80 flex-none border-l border-white/5 bg-[#050505] flex flex-col z-10 hidden lg:flex">
-          <div className="h-10 border-b border-white/5 flex items-center justify-between px-4 bg-[#000000]">
-             <span className="text-xs font-bold tracking-widest uppercase text-white/40 flex items-center gap-2">
-               <Bot size={14} /> AI Copilot
-             </span>
-             <button onClick={() => setIsCopilotOpen(false)}><X size={14} className="text-white/20 hover:text-white" /></button>
-          </div>
-          <div className="flex-1 p-4 text-sm text-white/40 text-center flex items-center justify-center">
-             Chatbot v2 (n8n Integration) Coming Soon...
-          </div>
-          <div className="p-4 border-t border-white/5">
-             <div className="h-8 bg-white/5 rounded border border-white/10"></div>
-          </div>
+        <aside className="w-80 border-l border-white/5 bg-[#050505] z-10 hidden lg:flex flex-col">
+           {/* Placeholder Copilot */}
+           <div className="p-4 text-white/40">AI Copilot Loading...</div>
         </aside>
       )}
 
       {/* STATUS BAR */}
-      <footer className="fixed bottom-0 left-0 right-0 h-6 bg-[#007acc] text-white flex items-center px-3 text-[10px] font-mono select-none z-50 justify-between">
+      <footer className="fixed bottom-0 left-0 right-0 h-6 bg-purple-900 text-white flex items-center px-3 text-[10px] font-mono select-none z-50 justify-between">
         <div className="flex items-center gap-4">
-           <span className="flex items-center gap-1"><GitGraph size={10} /> main*</span>
-           <span className="flex items-center gap-1"><X size={10} /> 0 errors</span>
+           <span><GitGraph size={10} className="inline mr-1"/> main*</span>
+           <span><X size={10} className="inline mr-1"/> 0 errors</span>
         </div>
         <div className="flex items-center gap-4">
-           <span className="cursor-pointer" onClick={() => setIsCopilotOpen(!isCopilotOpen)}>Copilot</span>
-           <span>TypeScript React</span>
+           <span className="cursor-pointer hover:underline" onClick={() => setIsCopilotOpen(!isCopilotOpen)}>
+             {isCopilotOpen ? "Hide Copilot" : "Show Copilot"}
+           </span>
+           <span>Project Runtime: Active</span>
         </div>
       </footer>
     </div>

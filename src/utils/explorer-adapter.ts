@@ -1,14 +1,19 @@
 import { STACK_CONFIG } from "@/config/stack-data";
+import { PROJECTS_DATA } from "@/config/projects"; // Importar os projetos
 import { 
   FileCode, 
   FileJson, 
   Database, 
   Cloud, 
   LayoutTemplate, 
-  Terminal 
+  Terminal,
+  FolderGit2,
+  Box
 } from "lucide-react";
 
-// Mapeamento de extensões e ícones baseados no ID da categoria
+// ... (Mantenha o CATEGORY_MAP e a interface ExplorerNode iguais) ...
+// Vou reescrever a função generateExplorerTree completa para facilitar o copy-paste
+
 const CATEGORY_MAP: Record<string, { folder: string; ext: string; icon: any }> = {
   frontend: { folder: "interface", ext: "tsx", icon: LayoutTemplate },
   backend: { folder: "systems", ext: "ts", icon: Terminal },
@@ -22,33 +27,39 @@ export interface ExplorerNode {
   type: "folder" | "file";
   isOpen?: boolean;
   children?: ExplorerNode[];
-  data?: any; // Guarda os dados originais (descrição, url, etc)
+  data?: any;
   icon?: any;
 }
 
 export function generateExplorerTree(): ExplorerNode[] {
-  // 1. Cria a estrutura base de pastas (src/...)
+  // 1. Árvore de Stack (Src)
   const srcChildren: ExplorerNode[] = STACK_CONFIG.map((category) => {
     const map = CATEGORY_MAP[category.id] || { folder: category.id, ext: "md", icon: FileCode };
-    
-    // Transforma os itens da categoria em arquivos
     const files: ExplorerNode[] = category.items.map((item) => ({
       id: item.id,
-      name: `${item.name.replace(/\s+/g, '')}.${map.ext}`, // Ex: Next.js -> Next.tsx
+      name: `${item.name.replace(/\s+/g, '')}.${map.ext}`,
       type: "file",
-      data: { ...item, originalCategory: category.label },
+      data: { ...item, originalCategory: category.label, kind: "stack" },
     }));
 
     return {
       id: `folder-${category.id}`,
       name: map.folder,
       type: "folder",
-      isOpen: true, // Pastas abertas por padrão para mostrar "volume" de trabalho
+      isOpen: false, // Fechado por padrão para focar nos projetos
       children: files,
     };
   });
 
-  // 2. Monta a árvore completa
+  // 2. Árvore de Projetos (Novo!)
+  const projectFiles: ExplorerNode[] = PROJECTS_DATA.map((proj) => ({
+    id: `proj-${proj.id}`,
+    name: proj.fileName,
+    type: "file",
+    data: { ...proj, kind: "project" },
+  }));
+
+  // 3. Montagem Final
   return [
     {
       id: "root-project",
@@ -56,6 +67,13 @@ export function generateExplorerTree(): ExplorerNode[] {
       type: "folder",
       isOpen: true,
       children: [
+        {
+          id: "folder-projects",
+          name: "projects",
+          type: "folder",
+          isOpen: true, // Projetos abertos em destaque
+          children: projectFiles,
+        },
         {
           id: "folder-src",
           name: "src",
@@ -67,13 +85,7 @@ export function generateExplorerTree(): ExplorerNode[] {
           id: "file-readme",
           name: "README.md",
           type: "file",
-          data: { isReadme: true },
-        },
-        {
-          id: "file-package",
-          name: "package.json",
-          type: "file",
-          data: { isPackage: true },
+          data: { isReadme: true, kind: "doc" },
         },
       ],
     },
