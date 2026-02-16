@@ -7,20 +7,24 @@ import {
 } from "lucide-react";
 
 import { STACK_CONFIG } from "@/config/stack-data";
-import { TechItem } from "@/types/stack";
 import { TechBadge } from "@/components/TechBadge";
 import { SectionHeader } from "@/components/SectionHeader";
 
 export function HomeTemplate() {
   const [activeTab, setActiveTab] = useState<string>(STACK_CONFIG[0].id);
-  const [selectedTechId, setSelectedTechId] = useState<string | null>(null);
+  // Mantemos a lógica de array para permitir múltiplos abertos e persistência
+  const [selectedTechIds, setSelectedTechIds] = useState<string[]>([]);
 
   const currentCategory = useMemo(() => 
     STACK_CONFIG.find(c => c.id === activeTab) || STACK_CONFIG[0]
   , [activeTab]);
 
   const handleTechSelect = useCallback((techId: string) => {
-    setSelectedTechId(prev => prev === techId ? null : techId);
+    setSelectedTechIds(prev => 
+      prev.includes(techId) 
+        ? prev.filter(id => id !== techId)
+        : [...prev, techId]
+    );
   }, []);
 
   return (
@@ -52,7 +56,9 @@ export function HomeTemplate() {
               return (
                 <button
                   key={cat.id}
-                  onClick={() => { setActiveTab(cat.id); setSelectedTechId(null); }}
+                  // ALTERAÇÃO CRÍTICA AQUI: Removemos "setSelectedTechIds([])"
+                  // Agora, ao trocar de aba, ele NÃO esquece o que estava aberto.
+                  onClick={() => setActiveTab(cat.id)} 
                   className={`w-full group flex items-center gap-4 p-4 rounded-xl transition-all duration-300 border ${
                     isActive ? "bg-white/10 border-white/20 shadow-xl" : "border-transparent hover:bg-white/5 hover:border-white/5"
                   }`}
@@ -93,14 +99,14 @@ export function HomeTemplate() {
                   {currentCategory.leadText}
                 </p>
 
-                {/* Grid de Tecnologias */}
+                {/* Grid de Tecnologias - Voltamos ao layout original (sem height forçado) */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
                   {currentCategory.items.map((item) => {
-                    const isSelected = selectedTechId === item.id;
+                    const isSelected = selectedTechIds.includes(item.id);
                     
                     return (
                       <div key={item.id} className="flex flex-col w-full">
-                        {/* 1. O Botão (Trigger) - Preto quando selecionado */}
+                        {/* 1. O Botão (Trigger) */}
                         <button
                           onClick={() => handleTechSelect(item.id)}
                           className={`w-full text-left p-5 rounded-xl border transition-all duration-300 group relative overflow-hidden ${
@@ -118,7 +124,7 @@ export function HomeTemplate() {
                           <TechBadge label={item.category} />
                         </button>
 
-                        {/* 2. A Gaveta (Drawer) - AGORA FUNDO BRANCO */}
+                        {/* 2. A Gaveta (Drawer) - Fundo Branco */}
                         <AnimatePresence>
                           {isSelected && (
                             <motion.div
@@ -129,13 +135,11 @@ export function HomeTemplate() {
                               className="overflow-hidden w-full z-0"
                             >
                               <div className="p-5 rounded-xl bg-white border border-white/20 shadow-inner">
-                                {/* Header System Log - Texto Escuro */}
                                 <div className="flex items-center gap-2 mb-3 text-black/40">
                                   <Terminal size={12} />
                                   <span className="mono text-[9px] uppercase tracking-widest">System Log</span>
                                 </div>
                                 
-                                {/* Descrição - Texto Escuro */}
                                 <p className="text-sm leading-relaxed text-black/70 font-medium mb-4">
                                   <span className="text-black/30 mr-2 mono">&gt;</span>
                                   {item.description}
@@ -143,7 +147,6 @@ export function HomeTemplate() {
 
                                 <div className="h-px w-full bg-black/5 mb-4" />
 
-                                {/* Botão "Read Docs" - PRETO com texto BRANCO */}
                                 <a
                                   href={item.url}
                                   target="_blank"
@@ -154,7 +157,6 @@ export function HomeTemplate() {
                                     Read Docs
                                   </span>
                                   <ArrowUpRight size={14} className="text-white/60 group-hover/link:text-white transition-colors" />
-                                  
                                 </a>
                               </div>
                             </motion.div>
