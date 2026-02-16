@@ -13,7 +13,6 @@ import { SectionHeader } from "@/components/SectionHeader";
 
 export function HomeTemplate() {
   const [activeTab, setActiveTab] = useState<string>(STACK_CONFIG[0].id);
-  // selectedTech agora guarda o ID da tech, para simplificar a comparação
   const [selectedTechId, setSelectedTechId] = useState<string | null>(null);
 
   const currentCategory = useMemo(() => 
@@ -101,25 +100,25 @@ export function HomeTemplate() {
                     
                     return (
                       <div key={item.id} className="flex flex-col w-full">
-                        {/* 1. O Botão (Trigger) */}
+                        {/* 1. O Botão (Trigger) - Preto quando selecionado */}
                         <button
                           onClick={() => handleTechSelect(item.id)}
                           className={`w-full text-left p-5 rounded-xl border transition-all duration-300 group relative overflow-hidden ${
                             isSelected 
-                              ? "bg-white border-white shadow-xl z-10 scale-[1.02]" 
+                              ? "bg-[#0a0a0a] border-white shadow-xl z-10 scale-[1.02]" 
                               : "bg-white/5 border-white/5 hover:border-white/20 hover:bg-white/10"
                           }`}
                         >
                           <div className="flex justify-between items-start mb-2">
-                            <span className={`text-sm font-bold tracking-tight ${isSelected ? "text-black" : "text-white"}`}>
+                            <span className={`text-sm font-bold tracking-tight text-white`}>
                               {item.name}
                             </span>
-                            <ExternalLink size={12} className={isSelected ? "text-black/40" : "text-white/20 group-hover:text-white/60"} />
+                            <ExternalLink size={12} className={isSelected ? "text-white/40" : "text-white/20 group-hover:text-white/60"} />
                           </div>
                           <TechBadge label={item.category} />
                         </button>
 
-                        {/* 2. A Gaveta (Drawer) - Surge logo abaixo do botão */}
+                        {/* 2. A Gaveta (Drawer) - AGORA FUNDO BRANCO */}
                         <AnimatePresence>
                           {isSelected && (
                             <motion.div
@@ -129,29 +128,33 @@ export function HomeTemplate() {
                               transition={{ duration: 0.3, ease: "easeInOut" }}
                               className="overflow-hidden w-full z-0"
                             >
-                              <div className="p-5 rounded-xl bg-[#0a0a0a] border border-white/10 shadow-inner">
-                                <div className="flex items-center gap-2 mb-3 text-white/40">
+                              <div className="p-5 rounded-xl bg-white border border-white/20 shadow-inner">
+                                {/* Header System Log - Texto Escuro */}
+                                <div className="flex items-center gap-2 mb-3 text-black/40">
                                   <Terminal size={12} />
                                   <span className="mono text-[9px] uppercase tracking-widest">System Log</span>
                                 </div>
                                 
-                                <p className="text-sm leading-relaxed text-white/70 font-medium mb-4">
-                                  <span className="text-white/30 mr-2 mono">&gt;</span>
+                                {/* Descrição - Texto Escuro */}
+                                <p className="text-sm leading-relaxed text-black/70 font-medium mb-4">
+                                  <span className="text-black/30 mr-2 mono">&gt;</span>
                                   {item.description}
                                 </p>
 
-                                <div className="h-px w-full bg-white/5 mb-4" />
+                                <div className="h-px w-full bg-black/5 mb-4" />
 
+                                {/* Botão "Read Docs" - PRETO com texto BRANCO */}
                                 <a
                                   href={item.url}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                  className="flex items-center justify-between group/link w-full py-2 px-3 rounded-lg hover:bg-white/5 transition-colors"
+                                  className="flex items-center justify-between group/link w-full py-2 px-3 rounded-lg bg-black hover:bg-neutral-800 transition-colors"
                                 >
-                                  <span className="text-xs mono uppercase tracking-wider text-white/50 group-hover/link:text-white">
+                                  <span className="text-xs mono uppercase tracking-wider text-white font-bold">
                                     Read Docs
                                   </span>
-                                  <ArrowUpRight size={14} className="text-white/30 group-hover/link:text-white transition-colors" />
+                                  <ArrowUpRight size={14} className="text-white/60 group-hover/link:text-white transition-colors" />
+                                  
                                 </a>
                               </div>
                             </motion.div>
