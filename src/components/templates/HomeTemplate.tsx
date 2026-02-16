@@ -42,8 +42,8 @@ export function HomeTemplate() {
         <div className="absolute inset-0 opacity-[0.02] [background-image:radial-gradient(#fff_1px,transparent_1px)] [background-size:40px_40px]" />
       </div>
 
-      {/* Main Container: Alterado para w-full, removendo max-w-6xl e mx-auto */}
-      <main className="relative z-10 w-full px-8 py-24">
+      {/* Main Container: Alterado padding-top (pt-4) para subir o conteúdo ao limite */}
+      <main className="relative z-10 w-full px-8 pt-4 pb-24">
         <SectionHeader title="Stack" subtitle="Intelligence." />
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
