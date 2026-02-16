@@ -12,7 +12,6 @@ import { SectionHeader } from "@/components/SectionHeader";
 
 export function HomeTemplate() {
   const [activeTab, setActiveTab] = useState<string>(STACK_CONFIG[0].id);
-  // Mantemos a lógica de array para permitir múltiplos abertos e persistência
   const [selectedTechIds, setSelectedTechIds] = useState<string[]>([]);
 
   const currentCategory = useMemo(() => 
@@ -43,7 +42,8 @@ export function HomeTemplate() {
         <div className="absolute inset-0 opacity-[0.02] [background-image:radial-gradient(#fff_1px,transparent_1px)] [background-size:40px_40px]" />
       </div>
 
-      <main className="relative z-10 max-w-6xl mx-auto px-8 py-24">
+      {/* Main Container: Alterado para w-full, removendo max-w-6xl e mx-auto */}
+      <main className="relative z-10 w-full px-8 py-24">
         <SectionHeader title="Stack" subtitle="Intelligence." />
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
@@ -56,9 +56,7 @@ export function HomeTemplate() {
               return (
                 <button
                   key={cat.id}
-                  // ALTERAÇÃO CRÍTICA AQUI: Removemos "setSelectedTechIds([])"
-                  // Agora, ao trocar de aba, ele NÃO esquece o que estava aberto.
-                  onClick={() => setActiveTab(cat.id)} 
+                  onClick={() => setActiveTab(cat.id)}
                   className={`w-full group flex items-center gap-4 p-4 rounded-xl transition-all duration-300 border ${
                     isActive ? "bg-white/10 border-white/20 shadow-xl" : "border-transparent hover:bg-white/5 hover:border-white/5"
                   }`}
@@ -99,7 +97,7 @@ export function HomeTemplate() {
                   {currentCategory.leadText}
                 </p>
 
-                {/* Grid de Tecnologias - Voltamos ao layout original (sem height forçado) */}
+                {/* Grid de Tecnologias */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
                   {currentCategory.items.map((item) => {
                     const isSelected = selectedTechIds.includes(item.id);
@@ -124,7 +122,7 @@ export function HomeTemplate() {
                           <TechBadge label={item.category} />
                         </button>
 
-                        {/* 2. A Gaveta (Drawer) - Fundo Branco */}
+                        {/* 2. A Gaveta (Drawer) */}
                         <AnimatePresence>
                           {isSelected && (
                             <motion.div
