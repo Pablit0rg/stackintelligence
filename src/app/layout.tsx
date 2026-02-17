@@ -12,7 +12,6 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-// Metadados Atualizados para SEO e Identidade Profissional
 export const metadata: Metadata = {
   title: "Stack Intelligence | Pablo Rosa Gomes",
   description: "Portfólio Full-Stack desenvolvido como um IDE interativo. Explore projetos, código e arquitetura de software.",
@@ -27,7 +26,7 @@ export default function RootLayout({
   return (
     <html lang="pt-BR" className="h-full">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased h-full overflow-hidden bg-[#050505]`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased h-full overflow-hidden bg-[#050505] text-[#a0a0a0]`}
       >
         {children}
       </body>

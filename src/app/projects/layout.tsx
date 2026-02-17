@@ -1,14 +1,15 @@
-// Este layout se aplica APENAS ao que estiver dentro de /projects
+// src/app/projects/layout.tsx
+import React from "react";
+
 export default function ProjectsLayout({
-    children,
-  }: {
-    children: React.ReactNode;
-  }) {
-    return (
-      <div className="min-h-screen w-full bg-white text-black overflow-y-auto">
-        {/* Removemos as restrições de altura e tema escuro aqui para 
-            que o projeto visualizado tenha sua própria "vida". */}
-        {children}
-      </div>
-    );
-  }
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="min-h-screen w-full bg-slate-50 text-slate-900 font-sans overflow-y-auto antialiased selection:bg-blue-200 selection:text-blue-900">
+      {/* Este layout "reseta" o estilo do IDE para simular um navegador limpo */}
+      {children}
+    </div>
+  );
+}
